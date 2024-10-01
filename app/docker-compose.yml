@@ -1,0 +1,9 @@
+version: '3.4'
+services:
+  draw_idea:
+    restart: always
+    image: draw-idea:latest
+    network_mode: host
+    ports:
+      - "8080:8080"
+

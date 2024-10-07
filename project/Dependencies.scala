@@ -3,51 +3,48 @@ import sbt.*
 object Dependencies {
 
   object V {
-    val cats          = "2.12.0"
-    val catsEffect    = "3.5.4"
-    val circe         = "0.14.10"
-    val http4s        = "0.23.28"
-    val iron          = "2.6.0"
-    val kittens       = "3.3.0"
-    val log4cats      = "2.7.0"
-    val logback       = "1.5.6"
-    val pureconfig       = "0.17.7"
-    val weaver        = "0.8.4"
+    val zio       = "2.1.9"
+    val zioConfig = "4.0.2"
+    val zioHttp   = "3.0.1"
+    val zioJson   = "0.7.3"
+    val zioMock = "1.0.0-RC12"
+
+    val cats       = "2.12.0"
+    val catsEffect = "3.5.4"
+    val circe      = "0.14.10"
+    val http4s     = "0.23.28"
+    val iron       = "2.6.0"
+    val kittens    = "3.3.0"
+    val log4cats   = "2.7.0"
+    val logback    = "1.5.6"
   }
 
   object Libraries {
-    def circe(artifact: String): ModuleID  = "io.circe"   %% s"circe-$artifact"  % V.circe
-    def http4s(artifact: String): ModuleID = "org.http4s" %% s"http4s-$artifact" % V.http4s
-    def pureconfig(artifact: String): ModuleID = "com.github.pureconfig" %% s"pureconfig-$artifact" % V.pureconfig
+    val zio = "dev.zio" %% "zio" % V.zio
 
-    val cats       = "org.typelevel"    %% "cats-core"   % V.cats
-    val catsEffect = "org.typelevel"    %% "cats-effect" % V.catsEffect
-    val kittens    = "org.typelevel" %% "kittens" % V.kittens
+    val zioJson = "dev.zio" %% "zio-json" % V.zioJson
 
-    val circeCore    = circe("core")
+    val zioHttp = "dev.zio" %% "zio-http" % V.zioHttp
 
-    val http4sDsl    = http4s("dsl")
-    val http4sServer = http4s("ember-server")
-    val http4sClient = http4s("ember-client")
-    val http4sCirce  = http4s("circe")
-
-    val ironCore  = "io.github.iltotore" %% "iron" % V.iron
-    val ironCats  = "io.github.iltotore" %% "iron-cats" % V.iron
-    val ironPureconfig = "io.github.iltotore" %% "iron-pureconfig" % V.iron
-    val ironCirce = "io.github.iltotore" %% "iron-circe" % V.iron
+    val ironCore    = "io.github.iltotore" %% "iron"          % V.iron
+    val ironZio     = "io.github.iltotore" %% "iron-zio"      % V.iron
+    val ironZioJson = "io.github.iltotore" %% "iron-zio-json" % V.iron
 
     val log4cats = "org.typelevel" %% "log4cats-slf4j" % V.log4cats
 
-    val pureconfigCore = pureconfig("core")
-    val pureconfigCatsEffect = pureconfig("cats-effect")
+    val zioConfig         = "dev.zio" %% "zio-config"          % V.zioConfig
+    val zioConfigMagnolia = "dev.zio" %% "zio-config-magnolia" % V.zioConfig
+    val zioConfigTypesafe = "dev.zio" %% "zio-config-typesafe" % V.zioConfig
 
     // Runtime
     val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
     // Test
-    val log4catsNoOp      = "org.typelevel"       %% "log4cats-noop"      % V.log4cats
-    val weaverCats        = "com.disneystreaming" %% "weaver-cats"        % V.weaver
-    val weaverScalaCheck  = "com.disneystreaming" %% "weaver-scalacheck"  % V.weaver
+    val zioTest = "dev.zio" %% "zio-test" % V.zio
+    val zioTestSbt = "dev.zio" %% "zio-test-sbt" % V.zio
+    val zioTestMagnolia = "dev.zio" %% "zio-test-magnolia" % V.zio
+    val zioHttpTestkit = "dev.zio" %% "zio-http-testkit" % V.zioHttp
+    val zioMock ="dev.zio" %% "zio-mock" % V.zioMock
   }
 
 }

@@ -1,34 +1,49 @@
 package ru.orangepigment.drawidea
 
-import cats.effect.std.{Random, Supervisor}
-import cats.effect.{IO, IOApp, Resource}
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
-import ru.orangepigment.drawidea.conf.AppConfig
-import ru.orangepigment.drawidea.modules.{HttpApi, Services}
-import ru.orangepigment.drawidea.resources.MkHttpServer
+import ru.orangepigment.drawidea.conf.{AppConfig, IdeaGeneratorConfig}
+import ru.orangepigment.drawidea.routes.IdeaRoutes
+import ru.orangepigment.drawidea.services.{IdeaGenerator, IdeaGeneratorImpl}
+import zio.*
+import zio.config.typesafe.TypesafeConfigProvider
+import zio.http.*
 
-object Main extends IOApp.Simple {
-  given Logger[IO] = Slf4jLogger.getLogger[IO]
+object MainApp extends ZIOAppDefault {
+  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    Runtime.setConfigProvider(
+      TypesafeConfigProvider
+        .fromResourcePath()
+    )
 
-  given IO[Random[IO]] = Random.scalaUtilRandom[IO]
-
-  override def run: IO[Unit] =
-    AppConfig.load[IO].flatMap { cfg =>
-      Logger[IO].info(s"Loaded config $cfg") >>
-        Supervisor[IO].use { case given Supervisor[IO] =>
-          Resource
-            .eval(Random.scalaUtilRandom[IO])
-            .map { case given Random[IO] =>
-              val services = Services.make[IO](cfg.ideaGenerator)
-              val api      = HttpApi.make[IO](cfg, services)
-
-              cfg.httpServer -> api.httpApp
-            }
-            .flatMap { case (cfg, httpApp) =>
-              MkHttpServer[IO].newEmber(cfg, httpApp)
-            }
-            .useForever
+  private val serverConfig: ZLayer[Any, Config.Error, Server.Config] =
+    ZLayer
+      .fromZIO(
+        ZIO.config[AppConfig](AppConfig.config).map { c =>
+          Server.Config.default.binding(c.httpServer.host, c.httpServer.port)
         }
-    }
+      )
+
+  private val ideaGeneratorConfig: ZLayer[Any, Config.Error, IdeaGeneratorConfig] =
+    ZLayer
+      .fromZIO(
+        ZIO.config[AppConfig](AppConfig.config).map { c =>
+          c.ideaGenerator
+        }
+      )
+
+  def run = {
+    (Server
+      .install(
+        IdeaRoutes()
+      )
+      .flatMap(port => Console.printLine(s"Started server on port: $port")) *> ZIO.never)
+      .provide(
+        serverConfig,
+        ideaGeneratorConfig,
+        // nettyConfig,
+        Server.live,
+
+        // To use the persistence layer, provide the `PersistentUserRepo.layer` layer instead
+        IdeaGeneratorImpl.layer
+      )
+  }
 }

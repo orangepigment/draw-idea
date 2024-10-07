@@ -1,6 +1,6 @@
 import Dependencies.Libraries
 
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "0.2.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "3.5.1"
 
@@ -18,23 +18,21 @@ lazy val root = (project in file("."))
     makeBatScripts  := Seq.empty,
     dockerExposedPorts  ++= Seq(8080),
     dockerUpdateLatest  := true,
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
     libraryDependencies ++= Seq(
-      Libraries.cats,
-      Libraries.catsEffect,
-      Libraries.log4cats,
-      Libraries.pureconfigCore,
-      Libraries.pureconfigCatsEffect,
-      Libraries.kittens,
+      Libraries.zio,
+      Libraries.zioConfig,
+      Libraries.zioConfigTypesafe,
+      Libraries.zioConfigMagnolia,
       Libraries.ironCore,
-      //Libraries.ironPureconfig,
-      Libraries.ironCats,
-      Libraries.ironCirce,
-      Libraries.http4sDsl,
-      Libraries.http4sServer,
-      Libraries.http4sClient,
-      Libraries.http4sCirce,
-      Libraries.logback % Runtime,
-      Libraries.weaverCats % Test,
-      Libraries.weaverScalaCheck % Test
+      //Libraries.ironZio,
+      Libraries.ironZioJson,
+      Libraries.zioHttp,
+      //Libraries.logback % Runtime,
+      Libraries.zioTest % Test,
+      Libraries.zioTestSbt % Test,
+      Libraries.zioTestMagnolia % Test,
+      Libraries.zioHttpTestkit % Test,
+      Libraries.zioMock % Test
     )
   )

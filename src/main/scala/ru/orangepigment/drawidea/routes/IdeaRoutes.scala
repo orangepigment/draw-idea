@@ -1,45 +1,58 @@
 package ru.orangepigment.drawidea.routes
 
-import cats.Monad
-import org.http4s.{HttpRoutes, Request}
-import org.http4s.circe.CirceEntityEncoder.*
-import org.http4s.dsl.Http4sDsl
-import org.http4s.headers.`Accept-Language`
-import org.http4s.server.Router
+import io.github.iltotore.iron.zioJson.given
 import ru.orangepigment.drawidea.conf.IdeaGeneratorConfig
 import ru.orangepigment.drawidea.models.{Language, PartsNum}
 import ru.orangepigment.drawidea.services.IdeaGenerator
-import io.github.iltotore.iron.circe.given
+import zio.ZIO
+import zio.http.*
+import zio.http.Header.AcceptLanguage
+import zio.json.*
 
-final class IdeaRoutes[F[_]: Monad](
-    conf: IdeaGeneratorConfig,
-    ideaGen: IdeaGenerator[F]
-) extends Http4sDsl[F] {
-  private val prefixPath = "/idea"
+import scala.util.{Failure, Success, Try}
 
-  private val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case request @ GET -> Root :? IdeaPartsNumParam(maybePartsNum) =>
-      maybePartsNum match
-        case Some(validated) =>
-          validated.fold(
-            parseFailures => BadRequest("partsNum must be in [2; 5] range"),
-            partsNum => ok(request, partsNum)
-          )
-        case None => ok(request, conf.defaultPartsNum)
-  }
-
-  private def ok(request: Request[F], partsNum: PartsNum) =
-    Ok(
-      ideaGen.getIdea(
-        request.headers
-          .get[`Accept-Language`]
-          .map(al => Language.applyUnsafe(al.values.head.primaryTag))
-          .getOrElse(conf.defaultLanguage),
-        partsNum
-      )
+object IdeaRoutes:
+  def apply(): Routes[IdeaGeneratorConfig & IdeaGenerator, Response] =
+    Routes(
+      // GET /idea
+      Method.GET / Root / "v1/idea" -> handler { (req: Request) =>
+        for {
+          config <- ZIO.service[IdeaGeneratorConfig]
+          language =
+            req.headers
+              .get(AcceptLanguage)
+              .map {
+                case AcceptLanguage.Single(language, weight) => Language.applyUnsafe(language)
+                case AcceptLanguage.Multiple(languages) =>
+                  config.defaultLanguage // ToDo: handle multiple languages case
+                case AcceptLanguage.Any => config.defaultLanguage
+              }
+              .getOrElse(config.defaultLanguage)
+          maybeRawPartsNum = req.url.queryParam("partsNum")
+          res <-
+            maybeRawPartsNum match
+              case Some(rawPartsNum) =>
+                Try(rawPartsNum.toInt) match
+                  case Failure(_) => ZIO.fail(Response.badRequest("partsNum must be in [2; 5] range"))
+                  case Success(intPartsNum) =>
+                    PartsNum
+                      .either(intPartsNum)
+                      .fold(
+                        _ => ZIO.fail(Response.badRequest("partsNum must be in [2; 5] range")),
+                        idea(language, _)
+                      )
+              case None => idea(language, config.defaultPartsNum)
+        } yield res
+      }
     )
 
-  val routes: HttpRoutes[F] = Router(
-    prefixPath -> httpRoutes
-  )
-}
+  private def idea(language: Language, partsNum: PartsNum): ZIO[IdeaGenerator, Response, Response] =
+    IdeaGenerator
+      .getIdea(
+        language,
+        partsNum
+      )
+      .mapBoth(
+        e => Response.fromThrowable(e),
+        idea => Response.json(idea.toJson)
+      )

@@ -1,16 +1,15 @@
 package ru.orangepigment.drawidea.conf
 
-import cats.effect.Sync
-import pureconfig.{ConfigReader, ConfigSource}
-import pureconfig.generic.derivation.default.*
-import pureconfig.module.catseffect.syntax.*
+import zio.config.*
+import zio.Config
+import zio.config.magnolia.*
 
 final case class AppConfig(
     httpServer: HttpServerConfig,
     ideaGenerator: IdeaGeneratorConfig
-) derives ConfigReader
+)
 
 object AppConfig {
-  def load[F[_]: Sync]: F[AppConfig] =
-    ConfigSource.default.loadF[F, AppConfig]()
+  val config: Config[AppConfig] =
+    deriveConfig[AppConfig].nested("AppConfig")
 }

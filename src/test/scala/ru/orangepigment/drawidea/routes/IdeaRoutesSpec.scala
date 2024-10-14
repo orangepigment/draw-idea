@@ -1,7 +1,6 @@
 package ru.orangepigment.drawidea.routes
 
 import io.github.iltotore.iron.*
-//import ru.orangepigment.drawidea.models.{Idea, Language, PartsNum, Theme}
 import ru.orangepigment.drawidea.models.{Idea, Theme}
 import ru.orangepigment.drawidea.services.{IdeaGenerator, IdeaGeneratorMock}
 import ru.orangepigment.drawidea.services.IdeaGeneratorSpec.suiteAll
@@ -46,7 +45,24 @@ object IdeaRoutesSpec extends SharedIdeaGenConfigSpec {
 
   def spec = suite("IdeaRoutesSpec")(
     test("GET idea succeeds without partsNum query param") {
-      check(themeListGen) { themes =>
+      for {
+        client  <- ZIO.service[Client]
+        _       <- TestServer.addRoutes(IdeaRoutes())
+        uioPort <- ZIO.serviceWith[Server](_.port)
+        port    <- uioPort
+        url = URL.root.port(port)
+        ideaResponse <- client(
+          Request.get(url / "v1" / "idea")
+        )
+      } yield assertTrue(ideaResponse.status == Status.Ok)
+    }.provideSome[Client & Driver](
+      TestServer.layer,
+      Scope.default,
+      bootstrap,
+      mockIdeaGenerator
+    ),
+    test("GET idea idea succeeds with partsNum query param") {
+      check(partsNumGen) { partsNum =>
         for {
           client  <- ZIO.service[Client]
           _       <- TestServer.addRoutes(IdeaRoutes())
@@ -54,7 +70,9 @@ object IdeaRoutesSpec extends SharedIdeaGenConfigSpec {
           port    <- uioPort
           url = URL.root.port(port)
           ideaResponse <- client(
-            Request.get(url / "v1" / "idea")
+            Request
+              .get(url / "v1" / "idea")
+              .addQueryParam("partsNum", partsNum.toString)
           )
         } yield assertTrue(ideaResponse.status == Status.Ok)
       }
@@ -66,9 +84,8 @@ object IdeaRoutesSpec extends SharedIdeaGenConfigSpec {
     ),
     test("GET idea fails with partsNum query param is outside [2;5] range") {
       check(
-        themeListGen,
         Gen.int.filter(!Range(2, 6).contains(_))
-      ) { case (themes, partsNum) =>
+      ) { partsNum =>
         for {
           client  <- ZIO.service[Client]
           _       <- TestServer.addRoutes(IdeaRoutes())

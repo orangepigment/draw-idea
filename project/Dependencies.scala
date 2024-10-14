@@ -3,7 +3,7 @@ import sbt.*
 object Dependencies {
 
   object V {
-    val zio       = "2.1.9"
+    val zio       = "2.1.11"
     val zioConfig = "4.0.2"
     val zioHttp   = "3.0.1"
     val zioJson   = "0.7.3"
@@ -27,7 +27,6 @@ object Dependencies {
     val zioHttp = "dev.zio" %% "zio-http" % V.zioHttp
 
     val ironCore    = "io.github.iltotore" %% "iron"          % V.iron
-    val ironZio     = "io.github.iltotore" %% "iron-zio"      % V.iron
     val ironZioJson = "io.github.iltotore" %% "iron-zio-json" % V.iron
 
     val log4cats = "org.typelevel" %% "log4cats-slf4j" % V.log4cats
@@ -35,9 +34,6 @@ object Dependencies {
     val zioConfig         = "dev.zio" %% "zio-config"          % V.zioConfig
     val zioConfigMagnolia = "dev.zio" %% "zio-config-magnolia" % V.zioConfig
     val zioConfigTypesafe = "dev.zio" %% "zio-config-typesafe" % V.zioConfig
-
-    // Runtime
-    val logback = "ch.qos.logback" % "logback-classic" % V.logback
 
     // Test
     val zioTest = "dev.zio" %% "zio-test" % V.zio
